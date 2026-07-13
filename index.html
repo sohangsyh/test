@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ballet Movement Guidance Platform</title>
+<style>
+  :root {
+    --bg: #0b0a0d;
+    --ink: #f6f2ee;
+    --muted: #b8afc4;
+    --accent: #d9a441;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+  }
+
+  .hero__video-wrap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero__video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  /* Inward masking gradient: fades the video edges into the page background
+     so the footage never hard-crops against the site background. Applied as
+     a mask (alpha) rather than an overlay, so it truly reveals bg beneath. */
+  .hero__mask {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, rgba(11,10,13,0) 40%, rgba(11,10,13,0.55) 78%, rgba(11,10,13,1) 100%),
+      linear-gradient(to bottom, rgba(11,10,13,0.85) 0%, rgba(11,10,13,0) 18%, rgba(11,10,13,0) 82%, rgba(11,10,13,0.95) 100%),
+      linear-gradient(to right, rgba(11,10,13,0.65) 0%, rgba(11,10,13,0) 15%, rgba(11,10,13,0) 85%, rgba(11,10,13,0.65) 100%);
+    z-index: 2;
+  }
+
+  .hero__grain {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 3px 3px;
+    opacity: 0.5;
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 4;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 0 24px;
+    will-change: transform, opacity;
+  }
+
+  .hero__eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .hero__title {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: clamp(2.6rem, 7vw, 6rem);
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+    max-width: 16ch;
+    text-shadow: 0 6px 40px rgba(0,0,0,0.55);
+  }
+
+  .hero__title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero__subtitle {
+    font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+    color: #ffffff;
+    max-width: 44ch;
+    line-height: 1.6;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+
+  .hero__cta {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 34px;
+    border: 1px solid rgba(246,242,238,0.35);
+    border-radius: 999px;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: rgba(246,242,238,0.05);
+    backdrop-filter: blur(6px);
+    transition: background 0.35s ease, border-color 0.35s ease, transform 0.35s ease;
+  }
+
+  .hero__cta:hover {
+    background: rgba(217,164,65,0.15);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* ---------- NEXT SECTION (context so the scroll transition reads) ---------- */
+  .section {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 24px;
+    background: var(--bg);
+    text-align: center;
+  }
+
+  .section__inner { max-width: 640px; }
+
+  .section__kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+
+  .section h2 {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+    margin-bottom: 20px;
+  }
+
+  .section p {
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.75;
+    font-size: 1.02rem;
+  }
+
+  /* ---------- TUTOR ---------- */
+  .tutor {
+    position: relative;
+    padding: 140px 24px 160px;
+    background: var(--bg);
+    text-align: center;
+  }
+
+  .tutor__kicker {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+
+  .tutor h2 {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+    margin-bottom: 16px;
+  }
+
+  .tutor__lede {
+    max-width: 46ch;
+    margin: 0 auto 64px;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.75;
+    font-size: 1.02rem;
+  }
+
+  .tutor__stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(20px, 4vw, 56px);
+    flex-wrap: wrap;
+  }
+
+  .tutor__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .tutor__window {
+    position: relative;
+    width: min(36.8vw, 480px);
+    aspect-ratio: 9 / 16;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #050405;
+    border: 3px solid rgba(184,175,196,0.25);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .tutor__score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 100px;
+    padding-top: 40px;
+  }
+
+  .tutor__score-value {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    font-weight: 400;
+    color: var(--muted);
+    transition: color 0.4s ease;
+  }
+
+  .tutor__score.is-sync .tutor__score-value { color: #45c98a; }
+  .tutor__score.is-async .tutor__score-value { color: #e2564f; }
+
+  .tutor__score-label {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tutor__window.is-sync {
+    border-color: #45c98a;
+    box-shadow: 0 0 0 1px rgba(69,201,138,0.4), 0 0 40px rgba(69,201,138,0.35), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .tutor__window.is-async {
+    border-color: #e2564f;
+    box-shadow: 0 0 0 1px rgba(226,86,79,0.4), 0 0 40px rgba(226,86,79,0.3), 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .tutor__mirror {
+    position: absolute;
+    inset: 0;
+    transform: scaleX(-1); /* mirror the webcam like a studio mirror */
+  }
+
+  .tutor__window video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* crops the source on both sides to fill the 9:16 frame */
+  }
+
+  .tutor__window canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .tutor__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 5;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(0,0,0,0.45);
+    padding: 5px 10px;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+  }
+
+  .tutor__badge--right {
+    left: auto;
+    right: 12px;
+  }
+
+  /* Hold-to-activate button: top-left of the camera window. A skeleton hand
+     resting on it for HOLD_DURATION_MS activates live match tracking. */
+  .tutor__hold-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 6;
+    width: 88px;
+    height: 88px;
+    padding: 5px;
+    border: none;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) 0%, rgba(255,255,255,0.18) 0);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+  }
+
+  .tutor__hold-btn-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(5,4,5,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    font-size: 11px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 6px;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .tutor__hold-btn.is-active .tutor__hold-btn-inner {
+    background: rgba(69,201,138,0.9);
+    color: #06120c;
+  }
+
+  .tutor__countdown {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 5.5rem;
+    color: var(--accent);
+    background: rgba(5,4,5,0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .tutor__countdown.is-active { opacity: 1; }
+
+  .tutor__col-label {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tutor__status {
+    margin-top: 40px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tutor__status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.4s ease;
+  }
+
+  .tutor__status.is-sync .tutor__status-dot { background: #45c98a; }
+  .tutor__status.is-async .tutor__status-dot { background: #e2564f; }
+
+  .tutor__enable {
+    margin-top: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid rgba(246,242,238,0.35);
+    border-radius: 999px;
+    color: var(--ink);
+    background: rgba(246,242,238,0.05);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+
+  .tutor__enable:hover {
+    background: rgba(217,164,65,0.15);
+    border-color: var(--accent);
+  }
+
+  .tutor__enable[hidden] { display: none; }
+
+  /* Pose selector row: six square buttons under the two windows. A is the
+     default/current pose; B–F are additional poses to practice. Selecting
+     one jumps the reference clip to that pose's segment of the footage. */
+  .tutor__poses {
+    margin-top: 36px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .tutor__pose-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    border: 1px solid rgba(246,242,238,0.25);
+    background: rgba(246,242,238,0.05);
+    color: var(--ink);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+  }
+
+  .tutor__pose-btn:hover {
+    border-color: var(--accent);
+    background: rgba(217,164,65,0.12);
+    transform: translateY(-2px);
+  }
+
+  .tutor__pose-btn.is-selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #1a1408;
+    font-weight: 700;
+    box-shadow: 0 0 24px rgba(217,164,65,0.4);
+  }
+</style>
+</head>
+<body>
+
+  <section class="hero" id="hero">
+    <div class="hero__video-wrap" id="videoWrap">
+      <video
+        class="hero__video"
+        id="heroVideo"
+        src="assets/ballet2.mp4"
+        autoplay
+        muted
+        playsinline
+        preload="auto"
+      ></video>
+      <div class="hero__mask"></div>
+      <div class="hero__grain"></div>
+    </div>
+
+    <div class="hero__content" id="heroContent">
+      <span class="hero__eyebrow">Est. Movement &amp; Method</span>
+      <h1 class="hero__title">Ballet Movement <em>Guidance</em></h1>
+      <p class="hero__subtitle">
+        Precision technique analysis, guided correction, and choreographic insight —
+        built for dancers who want to see every line they move.
+      </p>
+      <a href="#tutor" class="hero__cta">Begin Your Practice</a>
+    </div>
+  </section>
+
+  <section class="tutor" id="tutor">
+    <div class="tutor__kicker">Live Practice</div>
+    <h2>Match the Movement</h2>
+    <p class="tutor__lede">
+      Follow along with the reference clip. Your webcam tracks your full-body pose in real
+      time and shows a live match percentage — your camera frame glows green at 80% or above,
+      and red below it.
+    </p>
+
+    <div class="tutor__stage">
+      <div class="tutor__col">
+        <div class="tutor__window" id="camWindow">
+          <div class="tutor__mirror">
+            <video id="camVideo" autoplay muted playsinline></video>
+            <canvas id="camCanvas"></canvas>
+          </div>
+          <button class="tutor__hold-btn" id="tutorHoldBtn" type="button">
+            <span class="tutor__hold-btn-inner" id="tutorHoldBtnInner">Hold to Activate</span>
+          </button>
+          <span class="tutor__badge tutor__badge--right">You · Live</span>
+        </div>
+        <span class="tutor__col-label">Your Camera</span>
+      </div>
+
+      <div class="tutor__score" id="tutorScore">
+        <span class="tutor__score-value" id="tutorScoreValue">--%</span>
+        <span class="tutor__score-label">Match Rate</span>
+        <button class="tutor__enable" id="tutorEnable">Enable Camera</button>
+      </div>
+
+      <div class="tutor__col">
+        <div class="tutor__window" id="refWindow">
+          <video id="refVideo" src="assets/ballet.mp4" autoplay muted loop playsinline preload="auto"></video>
+          <canvas id="refCanvas"></canvas>
+          <div class="tutor__countdown" id="tutorCountdown"></div>
+          <span class="tutor__badge">Reference</span>
+        </div>
+        <span class="tutor__col-label">Follow This</span>
+      </div>
+    </div>
+
+    <div class="tutor__poses" id="tutorPoses">
+      <button class="tutor__pose-btn is-selected" type="button" data-pose="A">A</button>
+      <button class="tutor__pose-btn" type="button" data-pose="B">B</button>
+      <button class="tutor__pose-btn" type="button" data-pose="C">C</button>
+      <button class="tutor__pose-btn" type="button" data-pose="D">D</button>
+      <button class="tutor__pose-btn" type="button" data-pose="E">E</button>
+      <button class="tutor__pose-btn" type="button" data-pose="F">F</button>
+    </div>
+
+    <div class="tutor__status" id="tutorStatus">
+      <span class="tutor__status-dot"></span>
+      <span id="tutorStatusText">Enable your camera to begin</span>
+    </div>
+  </section>
+
+  <section class="section" id="learn-more">
+    <div class="section__inner">
+      <div class="section__kicker">The Platform</div>
+      <h2>Trained eyes, at any hour.</h2>
+      <p>
+        Upload a rehearsal clip and receive frame-by-frame feedback on alignment,
+        extension, and timing — the kind of guidance you'd expect from a studio mirror
+        and a mentor standing beside it.
+      </p>
+    </div>
+  </section>
+
+  <!-- Pose detection: TensorFlow.js + MoveNet, loaded from CDN. -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+
+  <script>
+    // ---------- TUTOR: live webcam vs. reference-video pose sync ----------
+    // Both feeds are run through the same MoveNet detector. Each pose is
+    // normalized (centered on the hips, scaled by torso length) into a
+    // joint vector, and the two vectors are compared each detection tick.
+    // A smoothed similarity score above a threshold flips both window
+    // frames to green (in sync); below it, they flip red.
+    (function () {
+      const camWindow = document.getElementById('camWindow');
+      const refWindow = document.getElementById('refWindow');
+      const camVideo = document.getElementById('camVideo');
+      const refVideo = document.getElementById('refVideo');
+      const camCanvas = document.getElementById('camCanvas');
+      const refCanvas = document.getElementById('refCanvas');
+      const camCtx = camCanvas.getContext('2d');
+      const refCtx = refCanvas.getContext('2d');
+      const statusEl = document.getElementById('tutorStatus');
+      const statusText = document.getElementById('tutorStatusText');
+      const enableBtn = document.getElementById('tutorEnable');
+      const scoreEl = document.getElementById('tutorScore');
+      const scoreValueEl = document.getElementById('tutorScoreValue');
+      const holdBtn = document.getElementById('tutorHoldBtn');
+      const holdBtnInner = document.getElementById('tutorHoldBtnInner');
+      const countdownEl = document.getElementById('tutorCountdown');
+      const heroVideo = document.getElementById('heroVideo');
+
+      // Robust autoplay: both videos are muted so browsers should autoplay
+      // them with no click at all, but autoplay policies vary, so we retry
+      // .play() on every relevant lifecycle event, and as a last resort on
+      // the very first interaction anywhere on the page (not a dedicated
+      // play button — any click, key press, scroll, or touch counts).
+      function forcePlay(video) {
+        if (!video) return;
+        video.muted = true;
+        video.playsInline = true;
+        const p = video.play();
+        if (p && p.catch) p.catch(() => {});
+      }
+
+      function forcePlayBoth() {
+        forcePlay(heroVideo);
+        forcePlay(refVideo);
+      }
+
+      forcePlayBoth();
+      document.addEventListener('DOMContentLoaded', forcePlayBoth);
+      window.addEventListener('load', forcePlayBoth);
+      window.addEventListener('pageshow', forcePlayBoth);
+      heroVideo.addEventListener('loadedmetadata', () => forcePlay(heroVideo));
+      heroVideo.addEventListener('canplay', () => forcePlay(heroVideo));
+      refVideo.addEventListener('loadedmetadata', () => forcePlay(refVideo));
+      refVideo.addEventListener('canplay', () => forcePlay(refVideo));
+
+      // Safari (especially over file://) is the strictest about autoplay and
+      // sometimes shows its native play glyph on the video itself — bind
+      // directly to the videos too so that very first tap (on the glyph or
+      // anywhere else) starts both clips immediately, not just the one tapped.
+      ['pointerdown', 'click', 'keydown', 'touchstart', 'scroll'].forEach((evt) => {
+        window.addEventListener(evt, forcePlayBoth, { once: true, passive: true });
+        heroVideo.addEventListener(evt, forcePlayBoth, { once: true, passive: true });
+        refVideo.addEventListener(evt, forcePlayBoth, { once: true, passive: true });
+      });
+
+      const EDGES = [
+        ['left_shoulder', 'right_shoulder'],
+        ['left_shoulder', 'left_elbow'], ['left_elbow', 'left_wrist'],
+        ['right_shoulder', 'right_elbow'], ['right_elbow', 'right_wrist'],
+        ['left_shoulder', 'left_hip'], ['right_shoulder', 'right_hip'],
+        ['left_hip', 'right_hip'],
+        ['left_hip', 'left_knee'], ['left_knee', 'left_ankle'],
+        ['right_hip', 'right_knee'], ['right_knee', 'right_ankle'],
+      ];
+
+      const JOINTS = [
+        'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
+        'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
+        'left_knee', 'right_knee', 'left_ankle', 'right_ankle',
+      ];
+
+      const SYNC_THRESHOLD = 0.8;
+      const HOLD_DURATION_MS = 3000; // how long a hand must rest on the button to activate tracking
+
+      let detector = null;
+      let camPose = null, refPose = null;
+      let smoothedSimilarity = 0;
+      let running = false;
+      let started = false; // true once the hold button has been activated (tracking begins)
+      let holdStartTime = null;
+
+      function resizeCanvas(canvas, videoBox) {
+        const rect = videoBox.getBoundingClientRect();
+        canvas.width = Math.round(rect.width);
+        canvas.height = Math.round(rect.height);
+      }
+
+      // Resizing forces a layout read + canvas reset, which is wasted work
+      // if done every detection tick — that main-thread churn was competing
+      // with the reference video's own decode/paint and showing up as lag.
+      // Only do it on load and when the window actually resizes.
+      function resizeAllCanvases() {
+        resizeCanvas(camCanvas, camWindow);
+        resizeCanvas(refCanvas, refWindow);
+      }
+      resizeAllCanvases();
+      window.addEventListener('resize', resizeAllCanvases);
+
+      // Only the left (camera) window and the percentage readout are
+      // color-coded — the reference window on the right always stays neutral,
+      // it just keeps replaying the clip for you to follow.
+      function setStatus(mode, text) {
+        statusText.textContent = text;
+        statusEl.classList.remove('is-sync', 'is-async');
+        camWindow.classList.remove('is-sync', 'is-async');
+        scoreEl.classList.remove('is-sync', 'is-async');
+        if (mode) {
+          statusEl.classList.add(mode);
+          camWindow.classList.add(mode);
+          scoreEl.classList.add(mode);
+        }
+      }
+
+      function normalizePose(pose) {
+        if (!pose || !pose.keypoints) return null;
+        const kp = {};
+        pose.keypoints.forEach((k) => { kp[k.name] = k; });
+        const lh = kp.left_hip, rh = kp.right_hip, ls = kp.left_shoulder, rs = kp.right_shoulder;
+        if (!lh || !rh || !ls || !rs) return null;
+
+        const cx = (lh.x + rh.x) / 2;
+        const cy = (lh.y + rh.y) / 2;
+        const scx = (ls.x + rs.x) / 2;
+        const scy = (ls.y + rs.y) / 2;
+        const scale = Math.hypot(scx - cx, scy - cy) || 1;
+
+        const vec = [];
+        let confidentCount = 0;
+        for (const name of JOINTS) {
+          const p = kp[name];
+          if (!p || (p.score ?? 0) < 0.15) {
+            vec.push(0, 0); // missing joint contributes no signal rather than killing the whole pose
+            continue;
+          }
+          confidentCount++;
+          vec.push((p.x - cx) / scale, (p.y - cy) / scale);
+        }
+        // Need at least half the tracked joints confidently visible to trust this pose.
+        if (confidentCount < JOINTS.length / 2) return null;
+        return vec;
+      }
+
+      function poseSimilarity(a, b) {
+        if (!a || !b) return 0;
+        let sumSq = 0;
+        for (let i = 0; i < a.length; i++) {
+          const d = a[i] - b[i];
+          sumSq += d * d;
+        }
+        const avgDist = Math.sqrt(sumSq / (a.length / 2));
+        // Forgiving falloff: identical poses -> ~100%, moderate differences still register.
+        // Combined with the higher SYNC_THRESHOLD, you still need a genuinely close match.
+        return Math.max(0, 1 - avgDist / 2.4);
+      }
+
+      // Maps wrist keypoints from a raw (unmirrored) pose into camWindow-local
+      // screen coordinates, accounting for both the object-fit: cover crop
+      // and the CSS scaleX(-1) mirror applied to the camera preview.
+      function getHandPoints(pose, canvas, videoEl) {
+        if (!pose || !videoEl.videoWidth || !videoEl.videoHeight) return [];
+        const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+        const cw = canvas.width, ch = canvas.height;
+        const scale = Math.max(cw / vw, ch / vh);
+        const ox = (cw - vw * scale) / 2;
+        const oy = (ch - vh * scale) / 2;
+
+        const kp = {};
+        pose.keypoints.forEach((k) => { kp[k.name] = k; });
+
+        const pts = [];
+        // Include elbows too, and a lower confidence bar — makes the hold
+        // gesture register even when the wrist is briefly occluded or the
+        // detector is a little unsure.
+        ['left_wrist', 'right_wrist', 'left_elbow', 'right_elbow'].forEach((name) => {
+          const p = kp[name];
+          if (p && p.score > 0.15) {
+            const x = p.x * scale + ox;
+            const y = p.y * scale + oy;
+            pts.push({ x: cw - x, y }); // mirror to match the visual display
+          }
+        });
+        return pts;
+      }
+
+      const HOLD_HIT_PADDING = 34; // px of extra generous margin around the button's visual bounds
+
+      function isPointOnHoldButton(pt) {
+        const btnRect = holdBtn.getBoundingClientRect();
+        const winRect = camWindow.getBoundingClientRect();
+        const left = btnRect.left - winRect.left - HOLD_HIT_PADDING;
+        const top = btnRect.top - winRect.top - HOLD_HIT_PADDING;
+        const right = btnRect.right - winRect.left + HOLD_HIT_PADDING;
+        const bottom = btnRect.bottom - winRect.top + HOLD_HIT_PADDING;
+        return pt.x >= left && pt.x <= right && pt.y >= top && pt.y <= bottom;
+      }
+
+      function updateHoldProgress(pct) {
+        const pctDisplay = Math.round(pct * 100);
+        holdBtn.style.background = `conic-gradient(var(--accent) ${pctDisplay}%, rgba(255,255,255,0.18) 0)`;
+        if (pct <= 0) {
+          holdBtnInner.textContent = 'Hold to Activate';
+        } else {
+          const secondsLeft = Math.max(0, Math.ceil((HOLD_DURATION_MS - pct * HOLD_DURATION_MS) / 1000));
+          holdBtnInner.textContent = secondsLeft > 0 ? `Hold… ${secondsLeft}s` : 'Activating…';
+        }
+      }
+
+      // Fired once a hand has rested on the button for HOLD_DURATION_MS.
+      // Runs a 3-2-1 countdown over the reference window, then replays the
+      // clip from the top (it was already autoplaying/looping) so the user
+      // gets a clean, synced run to match against, and turns on tracking.
+      function activateTracking() {
+        holdBtn.classList.add('is-active');
+        holdBtn.disabled = true;
+        holdBtnInner.textContent = 'Active';
+        holdBtn.style.background = 'conic-gradient(#45c98a 100%, rgba(255,255,255,0.18) 0)';
+
+        countdownEl.classList.add('is-active');
+        let n = 3;
+        countdownEl.textContent = String(n);
+
+        const tick = () => {
+          n -= 1;
+          if (n > 0) {
+            countdownEl.textContent = String(n);
+            setTimeout(tick, 1000);
+          } else {
+            countdownEl.textContent = 'Go!';
+            setTimeout(() => {
+              countdownEl.classList.remove('is-active');
+              refVideo.currentTime = 0;
+              forcePlay(refVideo);
+              started = true;
+            }, 500);
+          }
+        };
+        setTimeout(tick, 1000);
+      }
+
+      function drawSkeleton(ctx, pose, canvas, videoEl, color) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!pose || !videoEl.videoWidth || !videoEl.videoHeight) return;
+
+        const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+        const cw = canvas.width, ch = canvas.height;
+        const scale = Math.max(cw / vw, ch / vh);
+        const ox = (cw - vw * scale) / 2;
+        const oy = (ch - vh * scale) / 2;
+        const map = (x, y) => [x * scale + ox, y * scale + oy];
+
+        const kp = {};
+        pose.keypoints.forEach((k) => { kp[k.name] = k; });
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+
+        EDGES.forEach(([a, b]) => {
+          const pa = kp[a], pb = kp[b];
+          if (pa && pb && pa.score > 0.3 && pb.score > 0.3) {
+            const [ax, ay] = map(pa.x, pa.y);
+            const [bx, by] = map(pb.x, pb.y);
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+          }
+        });
+
+        pose.keypoints.forEach((k) => {
+          if (k.score > 0.3) {
+            const [x, y] = map(k.x, k.y);
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+
+      let refPoseFailStreak = 0;
+      let refPoseBlocked = false;
+      let tickCount = 0;
+      const REF_POSE_FAIL_HINT_THRESHOLD = 14; // ~3s of consecutive failures at the slower tick rate
+      const DETECT_INTERVAL_MS = 220; // lighter main-thread load so video playback doesn't stutter
+
+      async function detectTick() {
+        if (!running) return;
+
+        tickCount++;
+
+        try {
+          if (camVideo.readyState >= 2) {
+            const poses = await detector.estimatePoses(camVideo);
+            camPose = poses[0] || null;
+          }
+        } catch (e) { /* transient frame errors are fine to skip */ }
+
+        // Estimate the reference pose every other tick instead of every
+        // tick. It's one less heavy WebGL readback competing with the
+        // reference video's own decode/paint each cycle, which is what was
+        // showing up as visible playback lag.
+        if (tickCount % 2 === 0) {
+          try {
+            if (refVideo.readyState >= 2) {
+              const poses = await detector.estimatePoses(refVideo);
+              refPose = poses[0] || null;
+              refPoseFailStreak = 0;
+            }
+          } catch (e) {
+            // Chrome can block canvas/WebGL frame-reads on a video loaded via
+            // file:// (treats it as tainted), which silently kills pose
+            // detection on the reference clip specifically. Surface it
+            // instead of failing invisibly.
+            refPoseFailStreak++;
+            if (refPoseFailStreak >= REF_POSE_FAIL_HINT_THRESHOLD) refPoseBlocked = true;
+          }
+        }
+
+        drawSkeleton(camCtx, camPose, camCanvas, camVideo, '#d9a441');
+        drawSkeleton(refCtx, refPose, refCanvas, refVideo, '#d9a441');
+
+        if (refPoseBlocked) {
+          setStatus(null, 'Reference video can’t be analyzed here — serve this folder over http:// (not file://) for full tracking');
+          setTimeout(detectTick, DETECT_INTERVAL_MS);
+          return;
+        }
+
+        if (!started) {
+          // Before activation: track whether a hand is resting on the
+          // hold-to-activate button, and advance the hold timer. The
+          // reference video keeps autoplaying regardless.
+          const handPts = getHandPoints(camPose, camCanvas, camVideo);
+          const touching = handPts.some(isPointOnHoldButton);
+          if (touching) {
+            if (holdStartTime === null) holdStartTime = Date.now();
+            const pct = Math.min((Date.now() - holdStartTime) / HOLD_DURATION_MS, 1);
+            updateHoldProgress(pct);
+            if (pct >= 1) activateTracking();
+          } else {
+            holdStartTime = null;
+            updateHoldProgress(0);
+          }
+          scoreValueEl.textContent = '--%';
+          setStatus(null, 'Hold the button on your camera for 3s to activate tracking');
+        } else {
+          const vecA = normalizePose(camPose);
+          const vecB = normalizePose(refPose);
+          const similarity = poseSimilarity(vecA, vecB);
+          smoothedSimilarity = smoothedSimilarity * 0.75 + similarity * 0.25;
+
+          if (vecA && vecB) {
+            scoreValueEl.textContent = Math.round(smoothedSimilarity * 100) + '%';
+          } else {
+            scoreValueEl.textContent = '--%';
+          }
+
+          if (!vecA) {
+            setStatus(null, 'Step into frame — we need your full body in view');
+          } else if (!vecB) {
+            setStatus(null, 'Reading the reference movement…');
+          } else if (smoothedSimilarity >= SYNC_THRESHOLD) {
+            setStatus('is-sync', 'In sync — beautiful, keep going');
+          } else {
+            setStatus('is-async', 'Out of sync — match the reference movement');
+          }
+        }
+
+        setTimeout(detectTick, DETECT_INTERVAL_MS);
+      }
+
+      async function start() {
+        enableBtn.disabled = true;
+        enableBtn.textContent = 'Starting…';
+        setStatus(null, 'Requesting camera access…');
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false,
+          });
+          camVideo.srcObject = stream;
+          await camVideo.play();
+        } catch (err) {
+          setStatus('is-async', 'Camera access denied — enable it in your browser settings');
+          enableBtn.disabled = false;
+          enableBtn.textContent = 'Enable Camera';
+          return;
+        }
+
+        try {
+          setStatus(null, 'Loading pose model…');
+          await tf.setBackend('webgl');
+          await tf.ready();
+          detector = await poseDetection.createDetector(
+            poseDetection.SupportedModels.MoveNet,
+            { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+          );
+        } catch (err) {
+          setStatus('is-async', 'Pose detection failed to load — check your connection');
+          enableBtn.disabled = false;
+          enableBtn.textContent = 'Retry';
+          return;
+        }
+
+        enableBtn.hidden = true;
+        running = true;
+        detectTick();
+      }
+
+      enableBtn.addEventListener('click', start);
+
+      // Pose selector row: A/B/C/D/E/F split the reference clip into six
+      // equal segments. Picking one highlights that button and jumps the
+      // reference video to the start of that segment to practice it.
+      const poseButtons = Array.from(document.querySelectorAll('.tutor__pose-btn'));
+      poseButtons.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          poseButtons.forEach((b) => b.classList.remove('is-selected'));
+          btn.classList.add('is-selected');
+          const duration = refVideo.duration;
+          if (duration && isFinite(duration)) {
+            refVideo.currentTime = (duration / poseButtons.length) * i;
+            forcePlay(refVideo);
+          }
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
