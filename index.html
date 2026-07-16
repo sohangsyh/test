@@ -198,32 +198,6 @@
   .daily-ex-item input{pointer-events:none;}
   .daily-checklist-note{font-size:.7rem; color:var(--muted); margin-top:10px;}
 
-  .glb-viewer{
-    display:flex; gap:16px; flex-wrap:wrap;
-  }
-  .glb-viewer-stage{
-    position:relative; flex:1 1 360px; min-width:280px; aspect-ratio:4/3; background:#000; border-radius:12px;
-    overflow:hidden; border:2px dashed #332b40; cursor:pointer; transition:border-color .15s ease;
-  }
-  .glb-viewer-stage.dragover{border-color:var(--accent);}
-  .glb-viewport{position:absolute; inset:0;}
-  .glb-viewport canvas{width:100%; height:100%; display:block;}
-  .glb-drop-hint{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
-    padding:20px; font-size:.8rem; color:var(--muted); pointer-events:none; background:rgba(14,11,18,.35);
-  }
-  .glb-drop-hint.hidden{display:none;}
-  .glb-info-panel{
-    flex:1 1 260px; min-width:240px; background:var(--panel2); border-radius:12px; padding:14px; display:flex;
-    flex-direction:column; gap:8px;
-  }
-  .glb-info-row{
-    display:flex; justify-content:space-between; gap:10px; font-size:.76rem; border-bottom:1px solid #2a2434; padding-bottom:6px;
-  }
-  .glb-info-row span:first-child{color:var(--muted);}
-  .glb-info-row span:last-child{text-align:right; word-break:break-word;}
-  .glb-controls-row{display:flex; gap:8px; margin-top:4px;}
-
   /* ---------- RESPONSIVE ---------- */
   @media (max-width: 900px){
     .hero{height:460px;}
@@ -388,32 +362,6 @@
   <div class="footnote">Each cell marks the day a 30-hour window closed — green if all 15 exercises were checked off in time (streak +1), red if not (streak reset to 0).</div>
 </div>
 
-<div class="calendar-section">
-  <h2>GLB Viewer</h2>
-  <div class="glb-viewer">
-    <div class="glb-viewer-stage" id="glbDropZone">
-      <div class="glb-viewport" id="glbViewport"></div>
-      <div class="glb-drop-hint" id="glbDropHint">Drag a .glb file here, or click to browse</div>
-      <input type="file" id="glbFileInput" accept=".glb,.gltf" hidden>
-    </div>
-    <div class="glb-info-panel">
-      <div class="glb-info-row"><span>File</span><span id="glbInfoName">—</span></div>
-      <div class="glb-info-row"><span>Size</span><span id="glbInfoSize">—</span></div>
-      <div class="glb-info-row"><span>Meshes</span><span id="glbInfoMeshes">—</span></div>
-      <div class="glb-info-row"><span>Materials</span><span id="glbInfoMaterials">—</span></div>
-      <div class="glb-info-row"><span>Triangles</span><span id="glbInfoTris">—</span></div>
-      <div class="glb-info-row"><span>Bounding size (X/Y/Z)</span><span id="glbInfoSizeXYZ">—</span></div>
-      <div class="glb-info-row"><span>Animations</span><span id="glbInfoAnims">—</span></div>
-      <div class="glb-controls-row">
-        <button class="secondary" id="glbPlayBtn" onclick="toggleGlbPlay()" disabled>▶ Play</button>
-        <button class="secondary" onclick="resetGlbView()" disabled id="glbResetBtn">⟲ Reset view</button>
-      </div>
-      <div class="status-line" id="glbStatus">No file loaded yet. Orbit-drag to rotate, scroll to zoom once one is.</div>
-    </div>
-  </div>
-  <div class="footnote">Standalone debug tool — parses any .glb/.gltf straight from disk (no server or file path required) so you can sanity-check a model before wiring it into a rule/exercise slot above.</div>
-</div>
-
 <div id="diagBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#4a1420; color:#ffd7dc; padding:10px 16px; font:600 .8rem/1.4 'Segoe UI',system-ui,sans-serif; text-align:center;"></div>
 
 <!-- Plain (non-module) script, runs first and unconditionally. If the
@@ -554,12 +502,10 @@ const CLIP_POOLS = {
 CLIP_POOLS.both = [...CLIP_POOLS.turnout, ...CLIP_POOLS.technique];
 
 // The 3 Basic Rules previews are also GLB avatars now — looping, unscored.
-// Swapped to the user-supplied models: DNA / chromosome / microscope stand
-// in for hand placement / basic posture / pointing toes respectively.
 const RULE_AVATARS = {
-  hands:   "media/avatars/dna.glb",
-  posture: "media/avatars/chromosome.glb",
-  toes:    "media/avatars/microscope.glb"
+  hands:   "media/avatars/hand.glb",
+  posture: "media/avatars/starting-position.glb",
+  toes:    "media/avatars/point.glb"
 };
 
 // Manual per-file corrections, applied to the root object right after load.
@@ -700,7 +646,6 @@ function createAvatarViewport(container){
 
   let root = null, mixer = null, action = null, bones = {};
   let finishedHandler = null;
-  let lastRobustFraming = false;
 
   function resize(){
     const w = Math.max(1, container.clientWidth), h = Math.max(1, container.clientHeight);
@@ -717,27 +662,11 @@ function createAvatarViewport(container){
   // is visible with room to spare. Only runs on load — if the user has
   // manually dragged/zoomed, we leave their view alone rather than snapping
   // it back on every clip change.
-  function frameToBox(box, useSphere){
+  function frameToBox(box){
     const size = new THREE.Vector3(); box.getSize(size);
     const center = new THREE.Vector3(); box.getCenter(center);
-    // Tall rigged figures are framed off their vertical extent (size.y).
-    // Arbitrary props (DNA strand, chromosome, microscope — anything that
-    // isn't a standing humanoid) can be wider or deeper than they are tall,
-    // so size.y alone can produce a camera distance that's far too close
-    // (model fills/exceeds the frame or sits inside the near clip plane,
-    // which reads as "nothing visible"). useSphere instead frames off the
-    // bounding sphere radius, which accounts for all 3 axes at once.
-    let height, zoomMultiplier;
-    if(useSphere){
-      const sphere = new THREE.Sphere();
-      box.getBoundingSphere(sphere);
-      height = Math.max(sphere.radius * 2, 0.02);
-      zoomMultiplier = 0.6; // props (DNA/chromosome/microscope/anything via the GLB Viewer) — zoom in close, some edge crop is fine
-    } else {
-      height = Math.max(size.y, 0.4);
-      zoomMultiplier = 2.4; // tall rigged figures — keep the existing generous headroom
-    }
-    const dist = (height / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * zoomMultiplier;
+    const height = Math.max(size.y, 0.4);
+    const dist = (height / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2.4;
     camera.position.set(center.x, center.y + height * 0.05, center.z + dist);
     camera.near = Math.max(0.01, dist - height * 3);
     camera.far = dist + height * 6;
@@ -756,7 +685,7 @@ function createAvatarViewport(container){
   // positions always reflect the live animated pose — unlike Box3, which
   // isn't reliably skinning-aware across three.js versions), then pad that
   // out a bit to account for mesh surface extending past the bone centers.
-  function frameToFullMotionRange(object, animAction, useSphere){
+  function frameToFullMotionRange(object, animAction){
     const box = new THREE.Box3();
     box.setFromObject(object); // bind-pose shape as a baseline/fallback
     const duration = animAction ? animAction.getClip().duration : 0;
@@ -778,27 +707,23 @@ function createAvatarViewport(container){
       animAction.paused = wasPaused;
       mixer.update(0);
     }
-    if(box.isEmpty()){
-      console.warn("frameToFullMotionRange: bounding box empty for", object);
-      return;
-    }
+    if(box.isEmpty()) return;
     const size = new THREE.Vector3(); box.getSize(size);
-    const pad = useSphere ? 0 : Math.max(size.length() * 0.18, 0.2);
+    const pad = Math.max(size.length() * 0.18, 0.2);
     box.expandByScalar(pad);
-    frameToBox(box, useSphere);
+    frameToBox(box);
   }
 
-  // Shared setup once we have a parsed gltf object, regardless of whether
-  // it came from a URL fetch (load) or a locally-picked file (loadFromArrayBuffer).
-  function applyGltf(gltf, boneNames, opts, sourceUrl){
-    const { loop = true, onFinished = null, robustFraming = false } = opts;
+  async function load(url, boneNames, opts={}){
+    const { loop = true, onFinished = null } = opts;
+    const gltf = await loadGLTF(url);
     if(root) scene.remove(root);
     root = gltf.scene;
-    if(sourceUrl && CLIP_ROOT_RESET.has(sourceUrl)){
+    if(CLIP_ROOT_RESET.has(url)){
       root.position.set(0, 0, 0);
       root.quaternion.identity();
     }
-    if(sourceUrl && CLIP_CLEANUP[sourceUrl]) CLIP_CLEANUP[sourceUrl](root);
+    if(CLIP_CLEANUP[url]) CLIP_CLEANUP[url](root);
     scene.add(root);
 
     if(mixer && finishedHandler) mixer.removeEventListener("finished", finishedHandler);
@@ -823,53 +748,13 @@ function createAvatarViewport(container){
 
     // Framing needs the mixer/action set up first (above) so it can sample
     // real animated poses, not just the bind pose.
-    lastRobustFraming = robustFraming;
-    if(!userAdjusted) frameToFullMotionRange(root, action, robustFraming); // respect a view the user already set up
+    if(!userAdjusted) frameToFullMotionRange(root, action); // respect a view the user already set up
 
     bones = {};
     if(boneNames){
       Object.keys(boneNames).forEach(k => { bones[k] = root.getObjectByName(boneNames[k]) || null; });
     }
-
-    // Diagnostics for the debug GLB viewer (harmless/unused by the other callers).
-    let meshCount = 0, materialSet = new Set(), triCount = 0;
-    root.traverse(o => {
-      if(o.isMesh){
-        meshCount++;
-        if(o.material){
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materialSet.add(m.uuid));
-        }
-        const idx = o.geometry?.index;
-        triCount += idx ? idx.count / 3 : (o.geometry?.attributes?.position?.count || 0) / 3;
-      }
-    });
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3(); box.getSize(size);
-
-    return {
-      duration: action ? action.getClip().duration : 0,
-      meshCount, materialCount: materialSet.size, triCount: Math.round(triCount),
-      animationNames: (gltf.animations || []).map(c => c.name || "(unnamed)"),
-      animationCount: (gltf.animations || []).length,
-      size: { x: size.x, y: size.y, z: size.z }
-    };
-  }
-
-  async function load(url, boneNames, opts={}){
-    const gltf = await loadGLTF(url);
-    return applyGltf(gltf, boneNames, opts, url);
-  }
-
-  // For files picked locally (e.g. the drag-and-drop GLB debug viewer) —
-  // parses directly from an ArrayBuffer, no fetch/URL involved at all, so
-  // it works regardless of file:// vs http:// and needs no server.
-  function loadFromArrayBuffer(buffer, boneNames, opts={}){
-    return new Promise((resolve, reject) => {
-      gltfLoaderInstance.parse(buffer, "", (gltf) => {
-        try { resolve(applyGltf(gltf, boneNames, opts, null)); }
-        catch(err){ reject(err); }
-      }, reject);
-    });
+    return { duration: action ? action.getClip().duration : 0 };
   }
 
   function setTime(t){ if(action){ action.time = Math.max(0, t); mixer.update(0); } }
@@ -902,9 +787,9 @@ function createAvatarViewport(container){
     renderer.dispose();
   }
 
-  function resetView(){ userAdjusted = false; if(root) frameToFullMotionRange(root, action, lastRobustFraming); }
+  function resetView(){ userAdjusted = false; if(root) frameToFullMotionRange(root, action); }
 
-  return { load, loadFromArrayBuffer, setTime, setPaused, isPaused, getTime, getJointWorldPosition, dispose, resetView };
+  return { load, setTime, setPaused, isPaused, getTime, getJointWorldPosition, dispose, resetView };
 }
 
 /* ---------- LEFT TAB: REFERENCE PLAYER (continuous stitched timeline) ---------- */
@@ -1499,81 +1384,6 @@ function renderCalendar(){
   }
 }
 
-/* ---------- STANDALONE GLB DEBUG VIEWER ----------
-   Parses any locally-picked .glb/.gltf straight from an ArrayBuffer via
-   loadFromArrayBuffer() — no server, no file path, works even opened
-   directly as file://. Reuses the same createAvatarViewport (orbit
-   controls, lighting, robust bounding-sphere framing) as the rest of the
-   app so it's a true apples-to-apples preview of how a model will look
-   once wired into a rule/exercise slot. */
-const glbDropZone = document.getElementById("glbDropZone");
-const glbFileInput = document.getElementById("glbFileInput");
-const glbDropHint = document.getElementById("glbDropHint");
-const glbViewport = createAvatarViewport(document.getElementById("glbViewport"));
-let glbHasModel = false;
-let glbAnimPlaying = true;
-
-function formatBytes(n){
-  if(n < 1024) return n + " B";
-  if(n < 1024*1024) return (n/1024).toFixed(1) + " KB";
-  return (n/(1024*1024)).toFixed(2) + " MB";
-}
-
-async function loadGlbFile(file){
-  document.getElementById("glbStatus").textContent = `Loading ${file.name}…`;
-  document.getElementById("glbInfoName").textContent = file.name;
-  document.getElementById("glbInfoSize").textContent = formatBytes(file.size);
-  try{
-    const buffer = await file.arrayBuffer();
-    const info = await glbViewport.loadFromArrayBuffer(buffer, null, { loop:true, robustFraming:true });
-    glbHasModel = true;
-    glbAnimPlaying = true;
-    glbDropHint.classList.add("hidden");
-    document.getElementById("glbInfoMeshes").textContent = info.meshCount;
-    document.getElementById("glbInfoMaterials").textContent = info.materialCount;
-    document.getElementById("glbInfoTris").textContent = info.triCount.toLocaleString();
-    document.getElementById("glbInfoSizeXYZ").textContent =
-      `${info.size.x.toFixed(3)} / ${info.size.y.toFixed(3)} / ${info.size.z.toFixed(3)}`;
-    document.getElementById("glbInfoAnims").textContent =
-      info.animationCount === 0 ? "none (static model)" : `${info.animationCount} — ${info.animationNames.join(", ")}`;
-    const playBtn = document.getElementById("glbPlayBtn");
-    playBtn.disabled = info.animationCount === 0;
-    playBtn.textContent = "⏸ Pause";
-    document.getElementById("glbResetBtn").disabled = false;
-    document.getElementById("glbStatus").textContent =
-      `Loaded ${file.name}. Drag to orbit, scroll to zoom.`;
-  }catch(err){
-    console.error("GLB viewer failed to parse file:", file.name, err);
-    document.getElementById("glbStatus").textContent = `Failed to parse ${file.name}: ${err.message || err}`;
-  }
-}
-
-glbDropZone.addEventListener("click", () => glbFileInput.click());
-glbFileInput.addEventListener("change", () => {
-  if(glbFileInput.files[0]) loadGlbFile(glbFileInput.files[0]);
-});
-["dragenter","dragover"].forEach(evt => {
-  glbDropZone.addEventListener(evt, e => { e.preventDefault(); glbDropZone.classList.add("dragover"); });
-});
-["dragleave","drop"].forEach(evt => {
-  glbDropZone.addEventListener(evt, e => { e.preventDefault(); glbDropZone.classList.remove("dragover"); });
-});
-glbDropZone.addEventListener("drop", e => {
-  const file = e.dataTransfer.files?.[0];
-  if(file) loadGlbFile(file);
-});
-
-window.toggleGlbPlay = function(){
-  if(!glbHasModel) return;
-  glbAnimPlaying = !glbAnimPlaying;
-  glbViewport.setPaused(!glbAnimPlaying);
-  document.getElementById("glbPlayBtn").textContent = glbAnimPlaying ? "⏸ Pause" : "▶ Play";
-};
-window.resetGlbView = function(){
-  if(!glbHasModel) return;
-  glbViewport.resetView();
-};
-
 /* ---------- BOOT ---------- */
 loadPersistedState();
 setFocus("turnout"); // initializes the exercise-count max + hint text against loaded state
@@ -1595,12 +1405,7 @@ document.querySelectorAll("[data-avatar]").forEach(el => {
     el.addEventListener(evt, e => e.stopPropagation());
   });
   const vp = createAvatarViewport(el);
-  // robustFraming:true — these are arbitrary props (not tall rigged
-  // humanoids), so the camera frames off the bounding-sphere radius
-  // instead of vertical height alone. Without this a wide/flat/long
-  // object can end up framed at a near-zero or wildly oversized distance
-  // and render as a blank/black box even though it loaded successfully.
-  vp.load(glb, null, { loop:true, robustFraming:true }).catch(err => {
+  vp.load(glb, null, { loop:true }).catch(err => {
     console.error("Rule avatar failed to load:", glb, err);
     showDiag("Failed to load " + glb + ": " + err.message);
   });
